@@ -76,6 +76,16 @@ namespace SCL
             }
         }
 
+        public static bool IsScreenCaptureEnabled()
+        {
+            return (NativeFunctions.SCL_IsScreenCaptureEnabled() == 1) ? true : false;
+        }
+
+        public static void RequestScreenCapture()
+        {
+            NativeFunctions.SCL_RequestScreenCapture();
+        }
+
         // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
         ~ScreenCaptureManager()
         {

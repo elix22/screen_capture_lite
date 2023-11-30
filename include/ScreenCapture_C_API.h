@@ -206,6 +206,10 @@ SCL_CreateWindowCaptureConfigurationWithContext(SCL_WindowCallbackWithContext wi
 SC_LITE_C_EXTERN
 void SCL_FreeWindowCaptureConfiguration(SCL_ICaptureConfigurationWindowCaptureCallbackWrapperRef ptr);
 
+
+SC_LITE_C_EXTERN int SCL_IsScreenCaptureEnabled();
+SC_LITE_C_EXTERN void SCL_RequestScreenCapture();
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

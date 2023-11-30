@@ -521,3 +521,14 @@ SCL_CreateWindowCaptureConfigurationWithContext(SCL_WindowCallbackWithContext wi
 void SCL_FreeWindowCaptureConfiguration(SCL_ICaptureConfigurationWindowCaptureCallbackWrapperRef ptr) { delete ptr; }
 
 void SCL_FreeMonitorCaptureConfiguration(SCL_ICaptureConfigurationScreenCaptureCallbackWrapperRef ptr) { delete ptr; }
+
+int SCL_IsScreenCaptureEnabled()
+{
+    return (int)SL::Screen_Capture::IsScreenCaptureEnabled();
+}
+
+
+void SCL_RequestScreenCapture()
+{
+    SL::Screen_Capture::RequestScreenCapture();
+}
