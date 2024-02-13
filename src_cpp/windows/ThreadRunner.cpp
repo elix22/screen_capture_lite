@@ -3,6 +3,7 @@
 #include "GDIMouseProcessor.h"
 #include "ScreenCapture.h"
 #include "internal/ThreadManager.h"
+#include "WGCFrameProcessor.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -86,13 +87,18 @@ namespace Screen_Capture {
             return;
 #if defined _DEBUG || !defined NDEBUG
         std::cout << "Starting to Capture on Monitor " << Name(monitor) << std::endl;
-        std::cout << "Trying DirectX Desktop Duplication " << std::endl;
+        std::cout << "Trying DirectX Windows Graphics Capture " << std::endl;
 #endif
-        if (!TryCaptureMonitor<DXFrameProcessor>(data, monitor)) { // if DX is not supported, fallback to GDI capture
+        if (!TryCaptureMonitor<WGCFrameProcessor>(data, monitor)) {
 #if defined _DEBUG || !defined NDEBUG
-            std::cout << "DirectX Desktop Duplication not supported, falling back to GDI Capturing . . ." << std::endl;
+            std::cout << "Trying DirectX Desktop Duplication " << std::endl;
 #endif
-            TryCaptureMonitor<GDIFrameProcessor>(data, monitor);
+            if (!TryCaptureMonitor<DXFrameProcessor>(data, monitor)) { // if DX is not supported, fallback to GDI capture
+#if defined _DEBUG || !defined NDEBUG
+                std::cout << "DirectX Desktop Duplication not supported, falling back to GDI Capturing . . ." << std::endl;
+#endif
+                TryCaptureMonitor<GDIFrameProcessor>(data, monitor);
+            }
         }
     }
 

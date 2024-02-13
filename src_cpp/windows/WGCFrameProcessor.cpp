@@ -201,10 +201,6 @@ namespace Screen_Capture {
         DeviceContext = res.DeviceContext;
         OutputDesc = wgc.OutputDesc;
         Output = wgc.Output;
-        m_CaptureItem = *wgc.CaptureItem;
-        m_framePool = *wgc.framePool;
-        m_session =*wgc.session;
-
         Data = data;
 
         return ret;
@@ -274,7 +270,7 @@ namespace Screen_Capture {
         DxgiOutput->GetDesc(&r.OutputDesc);
 
         try {
-            *(r.CaptureItem) = CreateCaptureItemForMonitor(r.OutputDesc.Monitor);
+            m_CaptureItem = CreateCaptureItemForMonitor(r.OutputDesc.Monitor);
         }
         catch (winrt::hresult_error const &ex) {
             hr = ex.code();
@@ -295,38 +291,29 @@ namespace Screen_Capture {
             // the frame pool was created on. This also means that the creating thread
             // must have a DispatcherQueue. If you use this method, it's best not to do
             // it on the UI thread.
-            *r.framePool =
-                Direct3D11CaptureFramePool::CreateFreeThreaded(direct3DDevice, DirectXPixelFormat::B8G8R8A8UIntNormalized, 2, r.CaptureItem->Size());
+            m_framePool =
+                Direct3D11CaptureFramePool::CreateFreeThreaded(direct3DDevice, DirectXPixelFormat::B8G8R8A8UIntNormalized, 2, m_CaptureItem.Size());
+ 
 
-            *r.session = r.framePool->CreateCaptureSession(*r.CaptureItem);
+            m_session = m_framePool.CreateCaptureSession(m_CaptureItem);
 
             if (IsGraphicsCaptureIsBorderRequiredPropertyAvailable()) {
-                r.session->IsBorderRequired(false);
+                m_session.IsBorderRequired(false);
             }
 
-                r.framePool->FrameArrived({this, &WGCFrameProcessor::OnFrameArrived});
+            m_framePool.FrameArrived({this, &WGCFrameProcessor::OnFrameArrived});
 
             if (IsGraphicsCaptureCursorCapturePropertyAvailable()) {
-                    r.session->IsCursorCaptureEnabled(true);
+                m_session.IsCursorCaptureEnabled(true);
              }
-              
-            /*
-                 m_session.StartCapture();
-
-            */
+            
+             m_session.StartCapture();
         }
         catch (winrt::hresult_error const &ex) 
         {
             hr = ex.code();
             return ProcessFailure(device, L"Failed to create WindowsGraphicsCapture session ", L"Error", hr, nullptr);
         }
-
-        // IDirect3DDevice
-
-        //  IDirect3DDevice  direct3DDevice = reinterpret_cast<IDirect3DDevice>(d3d11Device);
-        //  *r.framePool = Direct3D11CaptureFramePool::CreateFreeThreaded(dev,
-        //  winrt::Windows::Graphics::DirectX::DirectXPixelFormat::B8G8R8A8UIntNormalized, 2,
-        //                                                                               r.CaptureItem->Size());
 
         r.Output = output;
         return DUPL_RETURN_SUCCESS;
@@ -336,7 +323,7 @@ namespace Screen_Capture {
     void WGCFrameProcessor::OnFrameArrived(winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool const& sender,
         winrt::Windows::Foundation::IInspectable const& args)
     {
-
+   
     }
 
     //
@@ -345,7 +332,74 @@ namespace Screen_Capture {
 
     DUPL_RETURN WGCFrameProcessor::ProcessFrame(const Monitor &currentmonitorinfo)
     {
+        Direct3D11CaptureFrame frame = nullptr;
+        HRESULT hr = E_FAIL;
+        try {
+            frame = m_framePool.TryGetNextFrame();
+        }
+        catch (winrt::hresult_error const &ex) {
+            hr = ex.code();
+          //  LOG_ERROR(L"Failed to get Direct3D11CaptureFrame: error is %ls", ex.message().c_str());
+            return DUPL_RETURN_ERROR_UNEXPECTED;
+        }
+
+        if (frame) 
+        {
+            auto surfaceTexture = Graphics::Capture::Util::GetDXGIInterfaceFromObject<ID3D11Texture2D>(frame.Surface());
+
+            if (!StagingSurf) {
+                D3D11_TEXTURE2D_DESC ThisDesc = {0};
+                surfaceTexture->GetDesc(&ThisDesc);
+                D3D11_TEXTURE2D_DESC StagingDesc;
+                StagingDesc = ThisDesc;
+                StagingDesc.BindFlags = 0;
+                StagingDesc.Usage = D3D11_USAGE_STAGING;
+                StagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+                StagingDesc.MiscFlags = 0;
+                StagingDesc.Height = Height(SelectedMonitor);
+                StagingDesc.Width = Width(SelectedMonitor);
+
+                hr = Device->CreateTexture2D(&StagingDesc, nullptr, StagingSurf.GetAddressOf());
+                if (FAILED(hr)) {
+                    return ProcessFailure(Device.Get(), L"Failed to create staging texture for move rects", L"Error", hr,
+                                          SystemTransitionsExpectedErrors);
+                }
+            }
+
+            if (Width(currentmonitorinfo) == Width(SelectedMonitor) && Height(currentmonitorinfo) == Height(SelectedMonitor)) {
+                DeviceContext->CopyResource(StagingSurf.Get(), surfaceTexture.get());
+            }
+            else {
+                D3D11_BOX sourceRegion;
+                sourceRegion.left = OffsetX(SelectedMonitor) - OutputDesc.DesktopCoordinates.left;
+                sourceRegion.right = sourceRegion.left + Width(SelectedMonitor);
+                sourceRegion.top = OffsetY(SelectedMonitor) + OutputDesc.DesktopCoordinates.top;
+                sourceRegion.bottom = sourceRegion.top + Height(SelectedMonitor);
+                sourceRegion.front = 0;
+                sourceRegion.back = 1;
+                DeviceContext->CopySubresourceRegion(StagingSurf.Get(), 0, 0, 0, 0, surfaceTexture.get(), 0, &sourceRegion);
+            }
+
+            D3D11_MAPPED_SUBRESOURCE MappingDesc = {0};
+            MAPPED_SUBRESOURCERAII mappedresrouce(DeviceContext.Get());
+            hr = mappedresrouce.Map(StagingSurf.Get(), 0, D3D11_MAP_READ, 0, &MappingDesc);
+            // Get the data
+            if (MappingDesc.pData == NULL) {
+                return ProcessFailure(Device.Get(),
+                                      L"DrawSurface_GetPixelColor: Could not read the pixel color because the mapped subresource returned NULL",
+                                      L"Error", hr, SystemTransitionsExpectedErrors);
+            }
+
+            auto startsrc = reinterpret_cast<unsigned char *>(MappingDesc.pData);
+            ProcessCapture(Data->ScreenCaptureData, *this, SelectedMonitor, startsrc, MappingDesc.RowPitch);
+
+            frame.Close();
+            return DUPL_RETURN_SUCCESS;
+        }
+
+
         return DUPL_RETURN_SUCCESS;
+      
     }
 } // namespace Screen_Capture
 } // namespace SL

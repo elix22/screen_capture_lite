@@ -165,7 +165,7 @@ int main(int, char **)
                 onNewFramecounter += 1;
             })
             ->start_capturing();
-    framgrabber->setFrameChangeInterval(std::chrono::milliseconds(30));
+    framgrabber->setFrameChangeInterval(std::chrono::milliseconds(10));
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);

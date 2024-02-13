@@ -12,6 +12,7 @@
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d11.lib")
 
+using namespace winrt::Windows::Graphics::Capture;
 
  struct DX_RESOURCES {
     Microsoft::WRL::ComPtr<ID3D11Device> Device;
@@ -21,34 +22,34 @@
 struct WGC_RESOURCES {
     DXGI_OUTPUT_DESC OutputDesc;
     UINT Output;
-    winrt::Windows::Graphics::Capture::GraphicsCaptureItem *CaptureItem;
-    winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool *framePool;
-    winrt::Windows::Graphics::Capture::GraphicsCaptureSession *session;
 };
 
 namespace SL {
     namespace Screen_Capture {
         class WGCFrameProcessor : public BaseFrameProcessor {
-            Microsoft::WRL::ComPtr<ID3D11Device> Device;
-            Microsoft::WRL::ComPtr<ID3D11DeviceContext> DeviceContext;
-            Microsoft::WRL::ComPtr<ID3D11Texture2D> StagingSurf;
-
-            winrt::Windows::Graphics::Capture::GraphicsCaptureItem m_CaptureItem;
-            winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool m_framePool;
-            winrt::Windows::Graphics::Capture::GraphicsCaptureSession m_session;
-
-            
-            DXGI_OUTPUT_DESC OutputDesc;
-            UINT Output;
-            std::vector<BYTE> MetaDataBuffer;
-            Monitor SelectedMonitor;
 
         public:
+            WGCFrameProcessor() : BaseFrameProcessor(),
+             m_CaptureItem(nullptr), m_framePool(nullptr), m_session(nullptr){}
 
             void Pause() {}
             void Resume() {}
             DUPL_RETURN Init(std::shared_ptr<Thread_Data> data, Monitor &monitor);
             DUPL_RETURN ProcessFrame(const Monitor &currentmonitorinfo);
+
+        public:
+          Microsoft::WRL::ComPtr<ID3D11Device> Device;
+          Microsoft::WRL::ComPtr<ID3D11DeviceContext> DeviceContext;
+          Microsoft::WRL::ComPtr<ID3D11Texture2D> StagingSurf;
+
+          GraphicsCaptureItem m_CaptureItem;
+          Direct3D11CaptureFramePool m_framePool;
+          GraphicsCaptureSession m_session;
+
+          DXGI_OUTPUT_DESC OutputDesc;
+          UINT Output;
+          std::vector<BYTE> MetaDataBuffer;
+          Monitor SelectedMonitor;
 
         private:
             void OnFrameArrived(winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool const &sender,
