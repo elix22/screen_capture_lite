@@ -12,6 +12,10 @@ if(WIN32)
 		../include/windows/GDIMouseProcessor.h
 		windows/ThreadRunner.cpp
 		../include/windows/GDIHelpers.h
+        windows/WindowsGraphicsCapture.util.cpp
+        ../include/windows/WindowsGraphicsCapture.util.h
+        windows/WGCFrameProcessor.cpp
+        ../include/windows/WGCFrameProcessor.h
     )
     set(SCREEN_CAPTURE_PLATFORM_INC     
        ../include/windows 

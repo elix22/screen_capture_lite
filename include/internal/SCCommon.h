@@ -56,6 +56,7 @@ namespace Screen_Capture {
     };
 
     enum DUPL_RETURN { DUPL_RETURN_SUCCESS = 0, DUPL_RETURN_ERROR_EXPECTED = 1, DUPL_RETURN_ERROR_UNEXPECTED = 2 };
+    enum WGC_RETURN { WGC_RETURN_SUCCESS = 0, WGC_RETURN_ERROR_EXPECTED = 1, WGC_RETURN_ERROR_UNEXPECTED = 2 };
     Monitor CreateMonitor(int index, int id, int h, int w, int ox, int oy, const std::string &n, float scale);
     Monitor CreateMonitor(int index, int id, int adapter, int h, int w, int ox, int oy, const std::string &n, float scale);
     SC_LITE_EXTERN Image CreateImage(const ImageRect &imgrect, int rowStrideInBytes, const ImageBGRA *data);

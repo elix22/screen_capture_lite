@@ -87,7 +87,7 @@ int main(int, char **)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    GLFWwindow *window = glfwCreateWindow(640, 480, "GLFW", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(1280, 960, "GLFW", NULL, NULL);
     glfwMakeContextCurrent(window);
     gladLoadGL(glfwGetProcAddress);
 
@@ -165,7 +165,7 @@ int main(int, char **)
                 onNewFramecounter += 1;
             })
             ->start_capturing();
-    framgrabber->setFrameChangeInterval(std::chrono::milliseconds(100));
+    framgrabber->setFrameChangeInterval(std::chrono::milliseconds(30));
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
