@@ -184,6 +184,25 @@ namespace Screen_Capture {
         }
     };
 
+
+    WGCFrameProcessor::~WGCFrameProcessor()
+    {
+        try {
+            m_session.Close();
+        }
+        catch (winrt::hresult_error const &ex) {
+        
+        }
+        try {
+            m_framePool.Close();
+        }
+        catch (winrt::hresult_error const &ex) {
+
+        }
+        m_framePool = nullptr;
+        m_session = nullptr;
+    }
+
     DUPL_RETURN WGCFrameProcessor::Init(std::shared_ptr<Thread_Data> data, Monitor &monitor)
     {
         SelectedMonitor = monitor;

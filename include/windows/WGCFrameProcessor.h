@@ -32,6 +32,7 @@ namespace SL {
             WGCFrameProcessor() : BaseFrameProcessor(),
              m_CaptureItem(nullptr), m_framePool(nullptr), m_session(nullptr){}
 
+            ~WGCFrameProcessor();
             void Pause() {}
             void Resume() {}
             DUPL_RETURN Init(std::shared_ptr<Thread_Data> data, Monitor &monitor);
